@@ -13,7 +13,7 @@ list_of_address_sizes_t free_blocks = {
   .all_addresses_and_sizes = {
     [0] = { 
       .begin_address = HEAP, 
-      .size = 1
+      .size = sizeof(HEAP)
     },
   }
   };
@@ -97,18 +97,30 @@ void *heap_alloc(int size) {
   }
 
   address_and_size_t res = free_blocks.all_addresses_and_sizes[idx];
-  // remove_an_address_via_index(idx, &free_blocks);
-  // void *ptr_l = res.begin_address;
 
-  void *ptr = extend_address(HEAP, allocated_bytes);
-  add_bytes(&allocated_bytes, size);
-  // make a meta struct
-  const address_and_size_t m = {.size = size, .begin_address = ptr};
-  // add to the meta array
-  add_to_allocated_array(m);
+  remove_an_address_via_index(idx, &free_blocks);
 
-  add_address(size, ptr, &allocated_blocks);
-  return ptr;
+  add_address(size, res.begin_address, &allocated_blocks);
+  int tail_size = res.size - size; 
+  if (tail_size > 0) {
+    add_address(tail_size, extend_address(res.begin_address, size),
+               &free_blocks);
+  }
+
+  return res.begin_address;
+
+  // // remove_an_address_via_index(idx, &free_blocks);
+  // // void *ptr_l = res.begin_address;
+
+  // void *ptr = extend_address(HEAP, allocated_bytes);
+  // add_bytes(&allocated_bytes, size);
+  // // make a meta struct
+  // const address_and_size_t m = {.size = size, .begin_address = ptr};
+  // // add to the meta array
+  // add_to_allocated_array(m);
+
+  // add_address(size, ptr, &allocated_blocks);
+  // return ptr;
 }
 
 void block_list_dump(list_of_address_sizes_t *list) {
@@ -151,7 +163,7 @@ void heap_free(void *address) {
 
 int main(int argc, const char *argv[]) {
 
-  for (int i = 0; i <= 10; i++) {
+  for (int i = 1; i <= 10; i++) {
     char *buffer = heap_alloc(i);
     if (i % 2 == 0) {
       heap_free(buffer);
